@@ -4,18 +4,25 @@ use Path::Iterator::Rule;
 use MP3::Tag;
 use Getopt::Long::Descriptive;
 use Path::Tiny;
+use List::MoreUtils qw/uniq/;
+use Text::Unidecode;
 
-my ($opt, $usage) = describe_options(
-    "$0 %o <some-arg>",
-    [ 'type|t=s', "file type (wav, mp3, etc.)" ],
-    [],
-    [ 'tag=s',   "file tag" ],
-    [ 'notag=s',   "missing tag" ],
-    [ 'print=s', "output" ],
-    [],
-    [ 'verbose|v',  "print extra stuff"            ],
+my ($opt, $usage) = 
+    describe_options
+    (
+     "$0 %o <some-arg>",
+     [ 'type|t=s', "file type (wav, mp3, etc.)" ],
+     [],
+     [ 'tag=s',   "file tag" ],
+     [ 'notag=s',   "missing tag" ],
+     [ 'print=s', "output" ],
+     [],
+     [ 'uniq|u', "only print unique output" ],
+     [ 'unidecode', "unidecode output" ],
+     [],
+     [ 'verbose|v',  "print extra stuff"            ],
     [ 'help',       "print usage message and exit" ],
-  );
+    );
 
 print($usage->text), exit if $opt->help;
 
@@ -61,13 +68,29 @@ if ($opt->print) {
 	$mp3 = MP3::Tag->new($file)->autoinfo;
 	$mp3->{file} = path($file);
 	$mp3->{dir} = $mp3->{file}->parent;
-	print (@{$mp3}{@tags});
+	return (@{$mp3}{@tags});
     };
 } else {
-    $print = sub { print shift };
+    $print = sub { return @_ };
 }
 
-my $next = $rule->iter( @ARGV );
-while ( defined( my $file = $next->() ) ) {
-    $print->($file);
+if ($opt->unidecode) {
+    my $sub = $print;
+    $print = sub { map { unidecode($_) } $sub->(@_) } 
 }
+
+my @iter;
+my $next = $rule->iter( @ARGV );
+
+if ($opt->uniq) {
+    while ( defined( my $file = $next->() ) ) {
+	push @iter, join $,, $print->($file);
+    }
+    print for uniq sort @iter;
+} else {
+    while ( defined( my $file = $next->() ) ) {
+	print $print->($file);
+    }
+}
+
+
