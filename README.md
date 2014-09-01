@@ -8,11 +8,11 @@ Adds a file to the iTunes database
 
 Finds files without tags. If passed a directory, examines it recurively.
 
-   perl find_no_tag.pl /some/directory
+    perl find_no_tag.pl /some/directory
 
 to find files without tags in the directory or 
 
-   find . -type f -name \*.mp3 -mtime -2 -exec perl find_no_tag.pl {} \;
+    find . -type f -name \*.mp3 -mtime -2 -exec perl find_no_tag.pl {} \;
 
 to check whether the files found have all tags 
 
